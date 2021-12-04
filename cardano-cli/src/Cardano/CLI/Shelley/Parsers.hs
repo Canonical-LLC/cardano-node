@@ -1430,20 +1430,16 @@ pColdSigningKeyFile =
       )
     )
 
-pRequiredSigner :: Parser WitnessSigningData
+pRequiredSigner :: Parser (Hash PaymentKey)
 pRequiredSigner =
-    KeyWitnessSigningData
-      <$>
-        ( SigningKeyFile <$>
-            Opt.strOption
-              (  Opt.long "required-signer"
-              <> Opt.metavar "FILE"
-              <> Opt.help "Input filepath of the signing key (zero or more) whose \
-                          \signature is required."
-              <> Opt.completer (Opt.bashCompleter "file")
-              )
-        )
-      <*> pure Nothing
+  Opt.option (Opt.maybeReader $ deserialiseFromRawBytesHex (AsHash AsPaymentKey) . Text.encodeUtf8 . Text.pack)
+    (  Opt.long "required-signer"
+    <> Opt.metavar "PUBLIC_KEY_HASH"
+    <> Opt.help "Input public key hash of the signing key (zero or more) whose \
+                \signature is required."
+    )
+
+
 
 pSomeWitnessSigningData :: Parser [WitnessSigningData]
 pSomeWitnessSigningData =
