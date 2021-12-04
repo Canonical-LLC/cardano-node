@@ -464,6 +464,10 @@ instance HasSeverityAnnotation (ConnectionManagerTrace addr (ConnectionHandlerTr
       TrState {}                              -> Info
       ConnMgr.TrUnexpectedlyFalseAssertion {} -> Error
 
+instance HasPrivacyAnnotation (ConnMgr.AbstractTransitionTrace addr)
+instance HasSeverityAnnotation (ConnMgr.AbstractTransitionTrace addr) where
+  getSeverityAnnotation _ = Debug
+
 instance HasPrivacyAnnotation (ServerTrace addr)
 instance HasSeverityAnnotation (ServerTrace addr) where
   getSeverityAnnotation ev =
@@ -683,10 +687,19 @@ instance (Show addr, Show versionNumber, Show agreedOptions, ToObject addr,
                                  addr
                                  (ConnectionHandlerTrace versionNumber agreedOptions)) where
   trTransformer = trStructuredText
+
+instance (Show addr, ToObject (ConnMgr.AbstractTransitionTrace addr))
+      => Transformable Text IO (ConnMgr.AbstractTransitionTrace addr) where
+  trTransformer = trStructuredText
+
 instance (Show addr, Show versionNumber, Show agreedOptions)
       => HasTextFormatter (ConnectionManagerTrace
                             addr
                             (ConnectionHandlerTrace versionNumber agreedOptions)) where
+  formatText a _ = pack (show a)
+
+instance (Show addr)
+      => HasTextFormatter (ConnMgr.AbstractTransitionTrace addr) where
   formatText a _ = pack (show a)
 
 instance (Show addr, ToObject addr, ToJSON addr)
@@ -902,18 +915,18 @@ instance ToJSON peerAddr => ToJSON (ConnectionId peerAddr) where
                  ]
 
 instance Aeson.ToJSON ConnectionManagerCounters where
-  toJSON ConnectionManagerCounters { prunableConns
+  toJSON ConnectionManagerCounters { fullDuplexConns
                                    , duplexConns
-                                   , uniConns
-                                   , incomingConns
-                                   , outgoingConns
+                                   , unidirectionalConns
+                                   , inboundConns
+                                   , outboundConns
                                    } =
     Aeson.object [ "kind"           .= String "ConnectionManagerCounters"
-                 , "prunable"       .= toJSON prunableConns
                  , "duplex"         .= toJSON duplexConns
-                 , "unidirectional" .= toJSON uniConns
-                 , "incoming"       .= incomingConns
-                 , "outgoing"       .= outgoingConns
+                 , "fullduplex"     .= toJSON fullDuplexConns
+                 , "unidirectional" .= toJSON unidirectionalConns
+                 , "inbound"        .= inboundConns
+                 , "outbound"       .= outboundConns
                  ]
 
 instance ToObject (FetchDecision [Point header]) where
@@ -1825,10 +1838,12 @@ instance (Show addr, Show versionNumber, Show agreedOptions, ToObject addr,
           , "remoteAddress" .= toObject verb remoteAddress
           , "connectionState" .= toJSON connState
           ]
-      TrPruneConnections peers ->
+      TrPruneConnections pruningSet cnt choiceSet ->
         mkObject
           [ "kind" .= String "PruneConnections"
-          , "peers" .= toJSON (toObject verb `map` peers)
+          , "pruningSet" .= toJSON (toObject verb `map` (Set.toList pruningSet))
+          , "choiceSet"  .= toJSON (toObject verb `map` (Set.toList choiceSet))
+          , "count"      .= toJSON cnt
           ]
       TrConnectionCleanup connId ->
         mkObject
@@ -1865,6 +1880,13 @@ instance (Show addr, Show versionNumber, Show agreedOptions, ToObject addr,
           [ "kind" .= String "UnexpectedlyFalseAssertion"
           , "info" .= String (pack . show $ info)
           ]
+
+instance (Show addr, ToObject addr, ToJSON addr)
+      => ToObject (ConnMgr.AbstractTransitionTrace addr) where
+  toObject verb (ConnMgr.TransitionTrace peerAddr tr) =
+    mkObject [ "address" .= toObject verb peerAddr
+             , "transition" .= String (pack . show $ tr)
+             ]
 
 instance (Show addr, ToObject addr, ToJSON addr)
       => ToObject (ServerTrace addr) where
@@ -1906,6 +1928,10 @@ instance ToJSON addr => ToJSON (OperationResult addr) where
   toJSON (OperationSuccess addr) =
     Aeson.object [ "kind" .= String "OperationSuccess"
                  , "operationSuccess" .= toJSON addr
+                 ]
+  toJSON (TerminatedConnection addr) =
+    Aeson.object [ "kind" .= String "TerminatedConnection"
+                 , "terminatedConnection" .= toJSON addr
                  ]
 
 instance ToJSON RemoteSt where
