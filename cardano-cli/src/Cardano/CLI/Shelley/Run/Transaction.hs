@@ -329,7 +329,7 @@ runTxBuildRaw
   -> [(CertificateFile, Maybe (ScriptWitnessFiles WitCtxStake))]
   -- ^ Certificate with potential script witness
   -> [(StakeAddress, Lovelace, Maybe (ScriptWitnessFiles WitCtxStake))]
-  -> [WitnessSigningData]
+  -> [Hash PaymentKey]
   -- ^ Required signers
   -> TxMetadataJsonSchema
   -> [ScriptFile]
@@ -395,7 +395,7 @@ runTxBuild
   -> [(CertificateFile, Maybe (ScriptWitnessFiles WitCtxStake))]
   -- ^ Certificate with potential script witness
   -> [(StakeAddress, Lovelace, Maybe (ScriptWitnessFiles WitCtxStake))]
-  -> [WitnessSigningData]
+  -> [Hash PaymentKey]
   -- ^ Required signers
   -> TxMetadataJsonSchema
   -> [ScriptFile]
@@ -701,27 +701,13 @@ validateTxAuxScripts era files =
       return $ TxAuxScripts supported scripts
 
 validateRequiredSigners :: CardanoEra era
-                        -> [WitnessSigningData]
+                        -> [Hash PaymentKey]
                         -> ExceptT ShelleyTxCmdError IO (TxExtraKeyWitnesses era)
 validateRequiredSigners _ [] = return TxExtraKeyWitnessesNone
 validateRequiredSigners era reqSigs =
   case extraKeyWitnessesSupportedInEra era of
     Nothing -> txFeatureMismatch era TxFeatureExtraKeyWits
-    Just supported -> do
-      keyWits <- firstExceptT ShelleyTxCmdReadWitnessSigningDataError
-                   $ mapM readWitnessSigningData reqSigs
-      let (_sksByron, sksShelley) = partitionSomeWitnesses $ map categoriseSomeWitness keyWits
-          shelleySigningKeys = map toShelleySigningKey sksShelley
-          paymentKeyHashes = map getHash shelleySigningKeys
-      return $ TxExtraKeyWitnesses supported paymentKeyHashes
- where
-  getHash :: ShelleySigningKey -> Hash PaymentKey
-  getHash (ShelleyExtendedSigningKey sk) =
-    let extSKey = PaymentExtendedSigningKey sk
-        payVKey = castVerificationKey $ getVerificationKey extSKey
-    in verificationKeyHash payVKey
-  getHash (ShelleyNormalSigningKey sk) =
-    verificationKeyHash . getVerificationKey $ PaymentSigningKey sk
+    Just supported -> return $ TxExtraKeyWitnesses supported reqSigs
 
 validateTxWithdrawals
   :: forall era.
