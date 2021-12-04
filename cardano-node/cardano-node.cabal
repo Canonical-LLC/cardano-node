@@ -62,6 +62,7 @@ library
   exposed-modules:     Cardano.Node.Configuration.Logging
                        Cardano.Node.Configuration.POM
                        Cardano.Node.Configuration.Topology
+                       Cardano.Node.Configuration.TopologyP2P
                        Cardano.Node.Handlers.Shutdown
                        Cardano.Node.Handlers.TopLevel
                        Cardano.Node.Orphans
@@ -72,17 +73,17 @@ library
                        Cardano.Node.Protocol.Shelley
                        Cardano.Node.Protocol.Types
                        Cardano.Node.Parsers
+                       Cardano.Node.Queries
                        Cardano.Node.Run
                        Cardano.Node.STM
                        Cardano.Node.Types
                        Cardano.Tracing.Config
                        Cardano.Tracing.Constraints
-                       Cardano.Tracing.ConvertTxId
                        Cardano.Tracing.Kernel
                        Cardano.Tracing.Metrics
                        Cardano.Tracing.Peer
-                       Cardano.Tracing.Queries
                        Cardano.Tracing.Render
+                       Cardano.Tracing.Startup
                        Cardano.Tracing.Tracers
                        Cardano.Tracing.OrphanInstances.Byron
                        Cardano.Tracing.OrphanInstances.Common

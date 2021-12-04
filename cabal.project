@@ -13,8 +13,8 @@ packages:
     bench/tx-generator
     plutus-example/plutus-example
     trace-dispatcher
-    trace-forward
     trace-resources
+    trace-forward
 
 package cardano-api
   ghc-options: -Werror
@@ -169,9 +169,15 @@ source-repository-package
 
 source-repository-package
   type: git
+<<<<<<< HEAD
   location: https://github.com/Canonical-LLC/cardano-ledger.git
   tag: 61035f9bea050bc5305cac2410be7fcdd12becb8
   --sha256: 057c7ci1sd2fb76z3ly447j5y8695yifyml2h2b879qfa7xpwkxd
+=======
+  location: https://github.com/input-output-hk/cardano-ledger
+  tag: 70cfbf9be79533a6d1b2ff446567f5b78bf945aa
+  --sha256: 03jnfz1zgd1r64va60nx2q6q7v7sdc2c7vhy5lm7kcjgakci27x1
+>>>>>>> master
   subdir:
     eras/alonzo/impl
     eras/alonzo/test-suite
@@ -235,8 +241,8 @@ source-repository-package
 source-repository-package
   type: git
   location: https://github.com/input-output-hk/ouroboros-network
-  tag: 94782e5ca52f234ff8eeddc6322a46cca0b69c0e
-  --sha256: 1da3pka4pn6sjf6w19d957aryjc9ip1a3g0vz7jz66pjri3v2n0j
+  tag: d613de3d872ec8b4a5da0c98afb443f322dc4dab
+  --sha256: 0lfbipfdrzay8v1pcazx0qgkda3d1j0505yig9jrml9j7991rmhl
   subdir:
     io-sim
     io-classes
@@ -272,8 +278,8 @@ source-repository-package
 source-repository-package
   type: git
   location: https://github.com/input-output-hk/ekg-forward
-  tag: d9e8fd302fa6ba41c07183d371e6777286d37bc2
-  --sha256: 0s8cblhq3i528jj7r7yd4v82nqzafj8vrgf0y80l7saxc3a5f2lk
+  tag: 2adc8b698443bb10154304b24f6c1d6913bb65b9
+  --sha256: 0cyixq3jmq43zs1yzrycqw1klyjy0zxf1vifknnr1k9d6sc3zf6b
 
 source-repository-package
   type: git

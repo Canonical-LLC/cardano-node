@@ -7,14 +7,14 @@ module Cardano.Benchmarking.Wallet
 where
 import           Prelude
 
+import           Data.Maybe
 import           Control.Concurrent.MVar
 
 import           Cardano.Api
 
 import           Cardano.Benchmarking.FundSet as FundSet
-import           Cardano.Benchmarking.GeneratorTx.Tx as Tx hiding (Fund)
 import           Cardano.Benchmarking.Types (NumberOfTxs (..))
-
+import           Cardano.Api.Shelley (ProtocolParameters)
 type WalletRef = MVar Wallet
 
 type TxGenerator era = [Fund] -> [TxOut CtxTx era] -> Either String (Tx era, TxId)
@@ -125,7 +125,7 @@ mkUTxOVariant variant networkId key validity values
     , newFunds
     )
  where
-  mkTxOut v = TxOut (Tx.keyAddress @ era networkId key) (mkTxOutValueAdaOnly v) TxOutDatumNone
+  mkTxOut v = TxOut (keyAddress @ era networkId key) (mkTxOutValueAdaOnly v) TxOutDatumNone
 
   newFunds txId = zipWith (mkNewFund txId) [TxIx 0 ..] values
 
@@ -133,32 +133,36 @@ mkUTxOVariant variant networkId key validity values
   mkNewFund txId txIx val = Fund $ InAnyCardanoEra (cardanoEra @ era) $ FundInEra {
       _fundTxIn = TxIn txId txIx
     , _fundVal = mkTxOutValueAdaOnly val
-    , _fundSigningKey = key
+    , _fundSigningKey = Just key
     , _fundValidity = validity
     , _fundVariant = variant
     }
 
-genTx :: forall era. IsShelleyBasedEra era
-  => TxFee era
+genTx :: forall era. IsShelleyBasedEra era =>
+     ProtocolParameters
+  -> (TxInsCollateral era, [Fund])
+  -> TxFee era
   -> TxMetadataInEra era
+  -> Witness WitCtxTxIn era
   -> TxGenerator era
-genTx fee metadata inFunds outputs
+genTx protocolParameters (collateral, collFunds) fee metadata witness inFunds outputs
   = case makeTransactionBody txBodyContent of
       Left err -> error $ show err
-      Right b -> Right ( signShelleyTransaction b (map (WitnessPaymentKey . getFundKey) inFunds)
+      Right b -> Right ( signShelleyTransaction b $ map WitnessPaymentKey allKeys
                        , getTxId b
                        )
  where
+  allKeys = mapMaybe getFundKey $ inFunds ++ collFunds
   txBodyContent = TxBodyContent {
-      txIns = map (\f -> (getFundTxIn f, BuildTxWith $ KeyWitness KeyWitnessForSpending)) inFunds
-    , txInsCollateral = TxInsCollateralNone
+      txIns = map (\f -> (getFundTxIn f, BuildTxWith witness)) inFunds
+    , txInsCollateral = collateral
     , txOuts = outputs
     , txFee = fee
     , txValidityRange = (TxValidityNoLowerBound, upperBound)
     , txMetadata = metadata
     , txAuxScripts = TxAuxScriptsNone
     , txExtraKeyWits = TxExtraKeyWitnessesNone
-    , txProtocolParams = BuildTxWith Nothing
+    , txProtocolParams = BuildTxWith $ Just protocolParameters
     , txWithdrawals = TxWithdrawalsNone
     , txCertificates = TxCertificatesNone
     , txUpdateProposal = TxUpdateProposalNone
@@ -218,3 +222,17 @@ limitSteps ::
   -> WalletScript era
   -> WalletScript era
 limitSteps = undefined
+
+keyAddress :: forall era. IsShelleyBasedEra era => NetworkId -> SigningKey PaymentKey -> AddressInEra era
+keyAddress networkId k
+  = makeShelleyAddressInEra
+      networkId
+      (PaymentCredentialByKey $ verificationKeyHash $ getVerificationKey k)
+      NoStakeAddress
+
+mkTxOutValueAdaOnly :: forall era . IsShelleyBasedEra era => Lovelace -> TxOutValue era
+mkTxOutValueAdaOnly l = case shelleyBasedEra @ era of
+  ShelleyBasedEraShelley -> TxOutAdaOnly AdaOnlyInShelleyEra l
+  ShelleyBasedEraAllegra -> TxOutAdaOnly AdaOnlyInAllegraEra l
+  ShelleyBasedEraMary    -> TxOutValue MultiAssetInMaryEra $ lovelaceToValue l
+  ShelleyBasedEraAlonzo  -> TxOutValue MultiAssetInAlonzoEra $ lovelaceToValue l

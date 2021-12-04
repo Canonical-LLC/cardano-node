@@ -1,5 +1,5 @@
 name:                  tx-generator
-version:               1.30
+version:               1.32
 description:           The transaction generator for cardano node
 author:                IOHK
 maintainer:            operations@iohk.io
@@ -44,6 +44,7 @@ library
                        Cardano.Benchmarking.Script
                        Cardano.Benchmarking.Script.Action
                        Cardano.Benchmarking.Script.Aeson
+                       Cardano.Benchmarking.Script.AesonLegacy                       
                        Cardano.Benchmarking.Script.Core
                        Cardano.Benchmarking.Script.Env
                        Cardano.Benchmarking.Script.Example
@@ -69,6 +70,7 @@ library
                      , cardano-cli
                      , cardano-crypto-class
                      , cardano-crypto-wrapper
+                     , cardano-ledger-alonzo
                      , cardano-ledger-byron
                      , cardano-node
                      , cardano-prelude
@@ -95,6 +97,7 @@ library
                      , ouroboros-consensus-shelley
                      , ouroboros-network
                      , ouroboros-network-framework
+                     , plutus-ledger-api
                      , random
                      , serialise
                      , cardano-ledger-shelley

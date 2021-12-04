@@ -53,12 +53,21 @@ deriving instance Generic SubmitMode
 data PayMode where
   PayToAddr :: PayMode
   PayToCollateral :: PayMode  
-  PayToScript :: !String -> !ScriptData -> PayMode
+  PayToScript :: !FilePath -> !ScriptData -> PayMode
   deriving (Show, Eq)
 deriving instance Generic PayMode
 
 data SpendMode where
   SpendOutput :: SpendMode
-  SpendScript :: !String -> !ExecutionUnits -> !ScriptData -> !ScriptRedeemer -> SpendMode
+  SpendScript :: !FilePath -> ScriptBudget -> !ScriptData -> !ScriptRedeemer -> SpendMode
+  SpendAutoScript :: !FilePath -> SpendMode
   deriving (Show, Eq)
 deriving instance Generic SpendMode
+
+data ScriptBudget where
+  StaticScriptBudget :: !ExecutionUnits -> ScriptBudget
+  PreExecuteScript   :: ScriptBudget
+  CheckScriptBudget  :: !ExecutionUnits -> ScriptBudget
+  deriving (Show, Eq)
+deriving instance Generic ScriptBudget
+
