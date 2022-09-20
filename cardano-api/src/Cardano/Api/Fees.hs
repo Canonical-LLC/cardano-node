@@ -555,6 +555,7 @@ evaluateTransactionExecutionUnits _eraInMode systemstart history pparams utxo tx
         of Left err -> Left (TransactionValidityTranslationError err)
            Right exmap -> Right (fromLedgerScriptExUnitsMap exmap)
 
+
     evalBabbage :: forall ledgerera.
                   ShelleyLedgerEra era ~ ledgerera
                => ledgerera ~ Babbage.BabbageEra Ledger.StandardCrypto
